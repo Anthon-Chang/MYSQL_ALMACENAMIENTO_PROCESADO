@@ -1,0 +1,198 @@
+create database tienda_ropa;
+use tienda_ropa;
+
+create table cliente (
+    ID INT AUTO_INCREMENT PRIMARY KEY,  
+    nombre VARCHAR(30),                      
+    estatura DECIMAL(5,2),                    
+    edad int,                     
+    compra DECIMAL(10,2)                      
+);
+
+CREATE TABLE ordenes (
+    orden_id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT,
+    fecha DATE,
+    total DECIMAL(10,2),
+    FOREIGN KEY (cliente_id) REFERENCES cliente(ID)
+);
+
+
+INSERT INTO cliente (nombre, estatura, edad, compra) 
+VALUES ('Ana López', 1.65, 28, 120.50);
+
+-- PRUEBA
+delimiter $$
+
+create procedure verificar_cliente(in nombre varchar(30), out resultado varchar(50))
+begin
+	DECLARE contador INT;
+
+    SELECT COUNT(*) INTO contador FROM cliente WHERE cliente.nombre = nombre;
+
+    IF contador > 0 THEN
+		set resultado = 'Cliente existente';
+	else 
+		set resultado = 'Cliente no existente';
+	end if;
+end $$
+
+delimiter ;
+
+call verificar_cliente('julio', @resultado);
+select @resultado;
+--
+
+-- CONSULTAS CON P.A
+delimiter $$
+
+create procedure detalle_cliente(in p_id int)
+begin
+	select * from cliente where id = p_id;
+end $$
+
+delimiter ;
+
+call detalle_cliente(3);
+
+--  INSERTAR CON P.A
+delimiter $$
+
+create procedure insertar_cliente(
+	in p_nombre varchar(30),
+    in p_estatura DECIMAL(5,2),                    
+    in p_edad int,                     
+    in p_compra DECIMAL(10,2)
+)
+begin
+	insert into cliente(nombre, estatura, edad, compra)
+    values (p_nombre, p_estatura, p_edad, p_compra);
+end $$
+
+delimiter ;
+
+call insertar_cliente('Luis Torres', 1.80, 35, 300.75);
+--
+
+-- ACTUALIZAR CON P.A
+delimiter $$
+
+create procedure update_cliente(
+	in p_id int,
+    in p_edad int
+)
+begin
+	update cliente set edad = p_edad where id = p_id;
+end $$
+
+delimiter ;
+
+call update_cliente(1, 30);
+--
+
+delimiter $$
+
+create procedure delete_cliente(
+	in p_id int
+)
+begin
+	delete from cliente where id = p_id;
+end $$
+
+delimiter ;
+
+call delete_cliente(1);
+--
+
+DELIMITER $$
+
+CREATE PROCEDURE verificar_edad(IN edad INT, OUT resultado VARCHAR(20))
+BEGIN
+    IF edad >= 22 THEN
+        SET resultado = 'mayor de edad';
+    ELSE
+        SET resultado = 'menor de edad';
+    END IF;
+END $$
+
+DELIMITER ;
+
+call verificar_edad(25, @resultado);
+SELECT @resultado AS Estado;
+
+-- insetar cliente
+delimiter $$
+
+create procedure insertar_cliente(
+	in p_nombre varchar(30),
+    in p_estatura DECIMAL(5,2),                    
+    in p_edad int,                     
+    in p_compra DECIMAL(10,2)
+)
+begin
+	insert into cliente(nombre, estatura, edad, compra)
+    values (p_nombre, p_estatura, p_edad, p_compra);
+end $$
+
+delimiter ;
+
+call insertar_cliente('Luis Torres', 1.80, 35, 300.75);
+--
+
+--  INSERTAR ordenes
+delimiter $$
+
+create procedure insertar_ordenes(
+	p_cliente_id int,
+    p_fecha date,
+    p_total decimal(10,2)
+)
+begin
+    if exists (select 1 from cliente where id = p_cliente_id) then
+        insert into ordenes (cliente_id, fecha, total)
+        values (p_cliente_id, p_fecha, p_total);
+    else
+        signal sqlstate '45000' 
+        set message_text = 'error: el cliente especificado no existe.';
+    end if;
+end //
+
+delimiter ;
+
+call insertar_ordenes(2, '2024-07-29', 350.75);
+
+-- UPDATE ORDENES
+
+delimiter //
+
+create procedure actualizar_orden(
+    in p_orden_id int,          
+    in p_fecha date,           
+    in p_total decimal(10,2)    
+)
+begin
+	update ordenes
+	set fecha = p_fecha, total = p_total 
+    where orden_id = p_orden_id;
+end //
+
+delimiter ;
+
+call actualizar_orden(1, '2024-12-15', 500.00);
+
+-- DELETE ORDENES
+
+delimiter //
+
+create procedure eliminar_orden(
+    in p_orden_id int  
+)
+begin
+	delete from ordenes
+	where orden_id = p_orden_id;
+    
+end //
+
+delimiter ;
+
+call eliminar_orden(2);
